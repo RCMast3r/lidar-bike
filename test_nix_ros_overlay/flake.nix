@@ -11,14 +11,6 @@
   outputs = { self, nix-ros-overlay, nixpkgs, simple-ouster-driver-src}:
     nix-ros-overlay.inputs.flake-utils.lib.eachDefaultSystem (system:
       let
-
-        # my_overlay = final: prev: {
-        #   simple-ouster-driver = final.callPackage ./simple_ouster_driver.nix { src = simple-ouster-driver-src; };
-        # };
-
-        # my-ros-overlay = final: prev: {
-        #   rosPackages = prev.rosPackages // { jazzy = prev.rosPackages.jazzy.overrideScope my_overlay; };
-        # };
         pkgs = import nixpkgs {
           inherit system;
           overlays = [ nix-ros-overlay.overlays.default my_overlay ];
