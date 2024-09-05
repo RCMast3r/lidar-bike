@@ -60,21 +60,7 @@
         "nixpkgs": [
           "nix-ros-overlay",
           "nixpkgs"
-        ],
-        "simple-ouster-driver-src": "simple-ouster-driver-src"
-      }
-    },
-    "simple-ouster-driver-src": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1725376367,
-        "narHash": "sha256-ZexB0OupU4PysjVCzsIxQxGaL2wqDZNRyuEggNbcjOw=",
-        "path": "/home/ben/simple_ouster_driver",
-        "type": "path"
-      },
-      "original": {
-        "path": "/home/ben/simple_ouster_driver",
-        "type": "path"
+        ]
       }
     },
     "systems": {
