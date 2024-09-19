@@ -8,12 +8,12 @@
     nix-ros-overlay.url = "github:lopsided98/nix-ros-overlay/develop";
     nixpkgs.follows = "nix-ros-overlay/nixpkgs";  # IMPORTANT!!!
   };
-  outputs = { self, nix-ros-overlay, nixpkgs, simple-ouster-driver-src}:
+  outputs = { self, nix-ros-overlay, nixpkgs }:
     nix-ros-overlay.inputs.flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = import nixpkgs {
           inherit system;
-          overlays = [ nix-ros-overlay.overlays.default my_overlay ];
+          overlays = [ nix-ros-overlay.overlays.default ];
         };
       in {
         devShells.default = pkgs.mkShell {
