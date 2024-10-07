@@ -17,6 +17,9 @@
         };
       in {
         devShells.default = pkgs.mkShell {
+          shellHook = ''
+            sudo sysctl -w net.core.rmem_max=2147483647
+          '';
           name = "lidar-bike-env";
           RMW_IMPLEMENTATION = "rmw_cyclonedds_cpp";
           ROS_AUTOMATIC_DISCOVERY_RANGE="LOCALHOST";
