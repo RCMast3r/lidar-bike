@@ -1,14 +1,6 @@
 # LiDAR-Bike
 
-within `test_nix_ros_overlay`:
-
-- `nix develop`
-
-- `ros2 run usb_cam usb_cam_node_exe --ros-args -p video_device:="/dev/video2" -p "pixel_format:=mjpeg2rgb" -p frame_rate:=60`
-
-- `ros2 launch foxglove_bridge foxglove_bridge_launch.xml`
-
-## getting connected 
+## usage
 
 
 
@@ -27,5 +19,5 @@ within `test_nix_ros_overlay`:
 - `ros2 launch foxglove_bridge foxglove_bridge_launch.xml`
     - launches the foxglove live view driver
 
-in order to record all messages:
-`ros2 bag record -a`
+5. start recording all topics:
+- `ros2 bag record -a`
