@@ -93,5 +93,10 @@ I2CDriver::imu_data I2CDriver::sample_data() {
     data.accel_data.x = ((accel_data[0] *0.244)/ 1000.0f * 9.807);
     data.accel_data.y = ((accel_data[0] *0.244)/ 1000.0f * 9.807);
     data.accel_data.z = ((accel_data[0] *0.244)/ 1000.0f * 9.807);
+
+    auto mag_data = _read_vector(_device_file, LIS3MDL_ADDRESS);
+    data.mag_data.x = mag_data[0];
+    data.mag_data.y = mag_data[1];
+    data.mag_data.z = mag_data[2];
     return data;
 }

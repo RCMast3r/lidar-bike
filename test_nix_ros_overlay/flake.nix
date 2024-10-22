@@ -13,7 +13,14 @@
       let
         pkgs = import nixpkgs {
           inherit system;
-          overlays = [ nix-ros-overlay.overlays.default ];
+          overlays = [ nix-ros-overlay.overlays.default my-ros-overlay ];
+        };
+        my_overlay = final: prev: {
+          imu-gps-driver = final.callPackage ./imu_gps_driver.nix { };
+        };
+
+        my-ros-overlay = final: prev: {
+          rosPackages = prev.rosPackages // { jazzy = prev.rosPackages.jazzy.overrideScope my_overlay; };
         };
       in {
         devShells.default = pkgs.mkShell {
@@ -37,6 +44,8 @@
                     rosbag2-storage-mcap
                     ouster-ros
                     rmw-cyclonedds-cpp
+                    ublox
+                    imu-gps-driver
                     (usb-cam.overrideAttrs (finalAttrs: previousAttrs: {
                       propagatedBuildInputs = with pkgs; [ builtin-interfaces camera-info-manager cv-bridge ffmpeg_4 image-transport image-transport-plugins rclcpp rclcpp-components rosidl-default-runtime sensor-msgs std-msgs std-srvs v4l-utils ];
                       nativeBuildInputs = previousAttrs.nativeBuildInputs ++ [ pkgs.pkg-config ];

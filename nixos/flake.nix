@@ -27,8 +27,6 @@
         environment.systemPackages = [
           pkgs.i2c-tools
           (pkgs.python3.withPackages (ps: with ps; [ numpy pandas smbus2 i2c-tools ]))
-          # pkgs.python311Packages.i2c-tools
-          # pkgs.python311Packages.smbus2
 
         ];
         systemd.services.sshd.wantedBy = lib.mkOverride 40 [ "multi-user.target" ];
