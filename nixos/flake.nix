@@ -74,15 +74,7 @@
           raspberry-pi = {
             config = {
               all = {
-                # base-dt-params = {
-                # BOOT_UART = {
-                #   value = 1;
-                #   enable = true;
-                # };
-                # uart_2ndstage = {
-                #   value = 1;
-                #   enable = true;
-                # };
+                
                 options = {
                   i2c_arm_baudrate =
                     {
@@ -91,6 +83,10 @@
                     };
                 };
                 base-dt-params = {
+                  uart0 = {
+                    enable = true;
+                    value = "on";
+                  };
                   i2c_arm = {
                     enable = true;
                     value = "on";
