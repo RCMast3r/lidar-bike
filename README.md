@@ -21,3 +21,13 @@
 
 5. start recording all topics:
 - `ros2 bag record -a`
+
+
+## driver plans
+
+- new plan for GPS driver:
+    - connect over Serial to the GPS instead and use an off the shelf ROS driver for it
+        - one of these two should do it:
+            - https://github.com/KumarRobotics/ublox/tree/ros2
+            - https://github.com/aussierobots/ublox_dgnss
+    - use the i2c driver that is written here for making the accel / gyro messages for the IMU data
