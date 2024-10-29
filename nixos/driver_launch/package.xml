@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<package format="2">
+    <name>driver_launch</name>
+    <version>0.0.1</version>
+    <description>A package to launch multiple nodes</description>
+    <maintainer email="bhall75@gatech.edu">Ben Hall</maintainer>
+    <license>Apache 2.0</license>
+
+    <buildtool_depend>ament_cmake</buildtool_depend>
+    <buildtool_depend>ament_python</buildtool_depend>
+
+    <exec_depend>launch</exec_depend>
+    <exec_depend>launch_ros</exec_depend>
+
+    <!-- Add any additional dependencies your nodes might have -->
+    <exec_depend>imu_driver</exec_depend>
+    <!-- <exec_depend>your_second_package</exec_depend> -->
+
+</package>

@@ -1,5 +1,10 @@
 {
   description = "raspberry-pi-nix example";
+  nixConfig = {
+    extra-substituters = [ "https://ros.cachix.org" ];
+    extra-trusted-public-keys = [ "ros.cachix.org-1:dSyZxI8geDCJrwgvCOHDoAfOm5sV1wCPjBkKL+38Rvo=" ];
+  };
+
   # nixConfig = {
   #   extra-substituters = [
   #     # "https://raspberry-pi-nix.cachix.org"
@@ -12,25 +17,78 @@
   # };
 
   inputs = {
+    nix-ros-overlay.url = "github:lopsided98/nix-ros-overlay/develop";
+    nix-ros-nixpkgs.follows = "nix-ros-overlay/nixpkgs"; # IMPORTANT!!!
+
     raspberry-pi-nix.url = "github:nix-community/raspberry-pi-nix";
     nixpkgs.url = "github:NixOS/nixpkgs";
     nixpkgs.follows = "raspberry-pi-nix/nixpkgs";
   };
 
-  outputs = { self, nixpkgs, raspberry-pi-nix }:
+  outputs = { self, nixpkgs, raspberry-pi-nix, nix-ros-overlay, nix-ros-nixpkgs }:
     let
-      basic-config = { pkgs, lib, ... }: {
+      basic-config = { pkgs, lib, nix-ros-pkgs, ... }: {
         nix.settings.experimental-features = [ "nix-command" "flakes" ];
         nix.settings.require-sigs = false;
         security.sudo.enable = true;
         hardware.i2c.enable = true;
+
+        system.activationScripts.copyFile = lib.mkAfter ''
+          mkdir -p /home/nixos
+          cp ${./config/ddsconfig.xml} /home/nixos/ddsconfig.xml
+          chown nixos:nixos /home/nixos/ddsconfig.xml
+        '';
+
+        environment.variables = {
+          RMW_IMPLEMENTATION = "rmw_cyclonedds_cpp";
+          ROS_AUTOMATIC_DISCOVERY_RANGE="LOCALHOST";
+          RMW_CONNEXT_PUBLICATION_MODE="ASYNCHRONOUS";
+          CYCLONEDDS_URI="file:///home/nixos/ddsconfig.xml";
+        };
         environment.systemPackages = [
+          nix-ros-pkgs.colcon
+            # ... other non-ROS packages
+            (with nix-ros-pkgs.rosPackages.jazzy; buildEnv {
+                paths = [
+                    ros-core
+                    ros-base
+                    foxglove-bridge
+                    rosbag2-storage-mcap
+                    ouster-ros
+                    rmw-cyclonedds-cpp
+                    ublox
+                    imu-gps-driver
+                    (usb-cam.overrideAttrs (finalAttrs: previousAttrs: {
+                      propagatedBuildInputs = with nix-ros-pkgs; [ builtin-interfaces camera-info-manager cv-bridge ffmpeg_4 image-transport image-transport-plugins rclcpp rclcpp-components rosidl-default-runtime sensor-msgs std-msgs std-srvs v4l-utils ];
+                      nativeBuildInputs = previousAttrs.nativeBuildInputs ++ [ nix-ros-pkgs.pkg-config ];
+                    }))
+                ];
+            })
           pkgs.i2c-tools
           (pkgs.python3.withPackages (ps: with ps; [ numpy pandas smbus2 i2c-tools ]))
-          # pkgs.python311Packages.i2c-tools
-          # pkgs.python311Packages.smbus2
 
         ];
+
+        systemd.services.init_network = {
+          script = ''
+            sysctl -w net.core.rmem_max=2147483647
+          '';
+          wantedBy = [ "multi-user.target" ];
+        };
+
+        systemd.services.drivebrain-service = {
+          description = "driver ros2 launch Service";
+          wantedBy = [ "multi-user.target" ];
+          after = [ "network.target" ];
+
+          serviceConfig = {
+            After = [ "network.target" ];
+            ExecStart = "ros2 launch drivers drivers.launch";
+            ExecStop = "/bin/kill -9 $MAINPID";
+            Restart = "on-failure";
+          };
+        };
+        
         systemd.services.sshd.wantedBy = lib.mkOverride 40 [ "multi-user.target" ];
         services.openssh = { enable = true; };
         services.openssh.listenAddresses = [
@@ -74,7 +132,7 @@
           raspberry-pi = {
             config = {
               all = {
-                
+
                 options = {
                   i2c_arm_baudrate =
                     {
@@ -108,17 +166,35 @@
           pulse.enable = true;
         };
       };
+      test-nix-ros-pkgs = import nix-ros-nixpkgs {
+        system = "x86_64-linux";
+        overlays = [ nix-ros-overlay.overlays.default my-ros-overlay ];
+      };
+      nix-ros-pkgs = import nix-ros-nixpkgs {
+        system = "aarch64-linux";
+        overlays = [ nix-ros-overlay.overlays.default my-ros-overlay ];
+      };
+      my_overlay = final: prev: {
+        imu-gps-driver = final.callPackage ./imu_gps_driver.nix { };
+        driver-launch-meta = final.callPackage ./driver_launch_meta.nix { };
+      };
 
-
+      my-ros-overlay = final: prev: {
+        rosPackages = prev.rosPackages // { jazzy = prev.rosPackages.jazzy.overrideScope my_overlay; };
+      };
     in
     rec {
-
+      legacyPackages.x86_64-linux = test-nix-ros-pkgs;
+      legacyPackages.aarch64-linux = nix-ros-pkgs;
       nixosConfigurations.test-pi = nixpkgs.lib.nixosSystem {
         system = "aarch64-linux";
 
         modules = [
           raspberry-pi-nix.nixosModules.raspberry-pi
           basic-config
+          {
+            _module.args = { inherit nix-ros-pkgs; };
+          }
         ];
       };
     };

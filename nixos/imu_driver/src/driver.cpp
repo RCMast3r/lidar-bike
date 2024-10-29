@@ -70,6 +70,8 @@ I2CDriver::imu_data I2CDriver::sample_data() {
 
     I2CDriver::imu_data data;
     
+    std::cout << "reading gyro "<<std::endl;
+    _select_device(_device_file, LSM6DSL_ADDRESS);
     auto gyr_data = _read_vector(_device_file, LSM6DSL_OUTX_L_G); 
 
     // from https://ozzmaker.com/berryimu/
@@ -87,11 +89,19 @@ I2CDriver::imu_data I2CDriver::sample_data() {
     data.gyr_data.y = static_cast<float>(gyr_data[1] * 0.07);
     data.gyr_data.z = static_cast<float>(gyr_data[2] * 0.07);
 
- 
+    std::cout << "reading accel "<<std::endl;
+    _select_device(_device_file, LSM6DSL_ADDRESS);
     auto accel_data = _read_vector(_device_file, LSM6DSL_OUTX_L_XL);
     // 0.244 : from page 21 table 3. g = gravity (multiply by 9.807 to get m_ss)
     data.accel_data.x = ((accel_data[0] *0.244)/ 1000.0f * 9.807);
-    data.accel_data.y = ((accel_data[0] *0.244)/ 1000.0f * 9.807);
-    data.accel_data.z = ((accel_data[0] *0.244)/ 1000.0f * 9.807);
+    data.accel_data.y = ((accel_data[1] *0.244)/ 1000.0f * 9.807);
+    data.accel_data.z = ((accel_data[2] *0.244)/ 1000.0f * 9.807);
+  
+    std::cout << "reading mag "<<std::endl;
+    _select_device(_device_file, LIS3MDL_ADDRESS);
+    auto mag_data = _read_vector(_device_file, LIS3MDL_ADDRESS);
+    data.mag_data.x = mag_data[0];
+    data.mag_data.y = mag_data[1];
+    data.mag_data.z = mag_data[2];
     return data;
 }

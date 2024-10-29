@@ -6,7 +6,7 @@
 #include <fcntl.h>         // For open()
 extern "C"
 {
-    #include<linux/i2c-dev.h>
+    #include <linux/i2c-dev.h>
     #include <linux/i2c.h>
     #include <i2c/smbus.h>
 }
@@ -40,7 +40,8 @@ public:
   struct imu_data
   {
     xyz_vec gyr_data;
-    xyz_vec accel_data; 
+    xyz_vec accel_data;
+    xyz_vec mag_data; 
   };
   
   imu_data sample_data();
