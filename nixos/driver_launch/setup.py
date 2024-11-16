@@ -1,13 +1,16 @@
+from setuptools import find_packages
 from setuptools import setup
 
-package_name = 'driver_launch'
+package_name = 'meta_launch'
 
 setup(
     name=package_name,
     version='0.0.1',
-    packages=[package_name],
+    packages=find_packages(),
     data_files=[
-        ('share/launch', ['launch/multi_node_launch.py']),
+        ("share/ament_index/resource_index/packages", ["resource/" + package_name]),
+        ('share/' + package_name, ['package.xml']),
+        ('share/meta_launch', ['meta_launch/multi_node_launch.py']),
     ],
     install_requires=['setuptools'],
     zip_safe=True,

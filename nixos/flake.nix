@@ -27,7 +27,27 @@
 
   outputs = { self, nixpkgs, raspberry-pi-nix, nix-ros-overlay, nix-ros-nixpkgs }:
     let
-      basic-config = { pkgs, lib, nix-ros-pkgs, ... }: {
+      basic-config = { pkgs, lib, nix-ros-pkgs, ... }: let
+        asdf = (with nix-ros-pkgs.rosPackages.jazzy; buildEnv {
+                paths = [
+                    ros-core
+                    ros-base
+                    foxglove-bridge
+                    rosbag2-storage-mcap
+                    ouster-ros
+                    rmw-cyclonedds-cpp
+                    ublox
+                    imu-gps-driver
+                    ublox-dgnss
+                    nmea-navsat-driver
+                    meta-launch
+                    (usb-cam.overrideAttrs (finalAttrs: previousAttrs: {
+                      propagatedBuildInputs = with nix-ros-pkgs; [ builtin-interfaces camera-info-manager cv-bridge ffmpeg_4 image-transport image-transport-plugins rclcpp rclcpp-components rosidl-default-runtime sensor-msgs std-msgs std-srvs v4l-utils ];
+                      nativeBuildInputs = previousAttrs.nativeBuildInputs ++ [ nix-ros-pkgs.pkg-config ];
+                    }))
+                ];
+            });
+      in {
         nix.settings.experimental-features = [ "nix-command" "flakes" ];
         nix.settings.require-sigs = false;
         security.sudo.enable = true;
@@ -47,43 +67,30 @@
         };
         environment.systemPackages = [
           nix-ros-pkgs.colcon
+          pkgs.ser2net
             # ... other non-ROS packages
-            (with nix-ros-pkgs.rosPackages.jazzy; buildEnv {
-                paths = [
-                    ros-core
-                    ros-base
-                    foxglove-bridge
-                    rosbag2-storage-mcap
-                    ouster-ros
-                    rmw-cyclonedds-cpp
-                    ublox
-                    imu-gps-driver
-                    (usb-cam.overrideAttrs (finalAttrs: previousAttrs: {
-                      propagatedBuildInputs = with nix-ros-pkgs; [ builtin-interfaces camera-info-manager cv-bridge ffmpeg_4 image-transport image-transport-plugins rclcpp rclcpp-components rosidl-default-runtime sensor-msgs std-msgs std-srvs v4l-utils ];
-                      nativeBuildInputs = previousAttrs.nativeBuildInputs ++ [ nix-ros-pkgs.pkg-config ];
-                    }))
-                ];
-            })
+            
           pkgs.i2c-tools
           (pkgs.python3.withPackages (ps: with ps; [ numpy pandas smbus2 i2c-tools ]))
-
+          asdf
         ];
 
         systemd.services.init_network = {
           script = ''
-            sysctl -w net.core.rmem_max=2147483647
+            /run/current-system/sw/bin/sysctl/sysctl -w net.core.rmem_max=2147483647
           '';
           wantedBy = [ "multi-user.target" ];
         };
 
-        systemd.services.drivebrain-service = {
+        systemd.services.meta-launch-service = {
           description = "driver ros2 launch Service";
           wantedBy = [ "multi-user.target" ];
           after = [ "network.target" ];
 
           serviceConfig = {
+            path = [asdf];
             After = [ "network.target" ];
-            ExecStart = "ros2 launch drivers drivers.launch";
+            ExecStart = "/run/current-system/sw/bin/ros2 launch meta_launch multi_node_launch.py";
             ExecStop = "/bin/kill -9 $MAINPID";
             Restart = "on-failure";
           };
@@ -115,7 +122,7 @@
         networking.interfaces.eth0.ipv4 = {
           addresses = [
             {
-              address = "192.168.1.69"; # Your static IP address
+              address = "192.168.1.4"; # Your static IP address
               prefixLength = 24; # Netmask, 24 for 255.255.255.0
             }
           ];
@@ -176,7 +183,7 @@
       };
       my_overlay = final: prev: {
         imu-gps-driver = final.callPackage ./imu_gps_driver.nix { };
-        driver-launch-meta = final.callPackage ./driver_launch_meta.nix { };
+        meta-launch = final.callPackage ./driver_launch_meta.nix { };
       };
 
       my-ros-overlay = final: prev: {
@@ -184,6 +191,41 @@
       };
     in
     rec {
+
+      devShells.x86_64-linux.default = test-nix-ros-pkgs.mkShell {
+          shellHook = ''
+            sudo sysctl -w net.core.rmem_max=2147483647
+          '';
+          name = "lidar-bike-env";
+          RMW_IMPLEMENTATION = "rmw_cyclonedds_cpp";
+          ROS_AUTOMATIC_DISCOVERY_RANGE="LOCALHOST";
+          RMW_CONNEXT_PUBLICATION_MODE="ASYNCHRONOUS";
+          CYCLONEDDS_URI="file://config/ddsconfig.xml";
+          packages = [
+            test-nix-ros-pkgs.colcon
+            # ... other non-ROS packages
+            (with test-nix-ros-pkgs.rosPackages.jazzy; buildEnv {
+                paths = [
+                    ros-core
+                    ros-base
+                    foxglove-bridge
+                    rosbag2-storage-mcap
+                    ouster-ros
+                    rmw-cyclonedds-cpp
+                    ublox
+                    imu-gps-driver
+                    ublox-dgnss
+                    nmea-navsat-driver
+                    meta-launch
+                    (usb-cam.overrideAttrs (finalAttrs: previousAttrs: {
+                      propagatedBuildInputs = with test-nix-ros-pkgs; [ builtin-interfaces camera-info-manager cv-bridge ffmpeg_4 image-transport image-transport-plugins rclcpp rclcpp-components rosidl-default-runtime sensor-msgs std-msgs std-srvs v4l-utils ];
+                      nativeBuildInputs = previousAttrs.nativeBuildInputs ++ [ test-nix-ros-pkgs.pkg-config ];
+                    }))
+                ];
+            })
+          ];
+        };
+        
       legacyPackages.x86_64-linux = test-nix-ros-pkgs;
       legacyPackages.aarch64-linux = nix-ros-pkgs;
       nixosConfigurations.test-pi = nixpkgs.lib.nixosSystem {

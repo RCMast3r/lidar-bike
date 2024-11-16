@@ -1,12 +1,12 @@
-{ buildRosPackage, ament-cmake-ros, ament-cmake, ament-python, imu-gps-drive, ublox, rclpy }:
+{ buildRosPackage, ament-cmake-ros, ament-cmake, imu-gps-driver, ublox, rclpy, launch-ros }:
 buildRosPackage {
-  pname = "simple-berry-driver";
+  pname = "ros-jazzy-meta-launch";
   version = "0.0.1a";
   src = ./driver_launch;
 
   buildType = "ament_python";
-  propagatedBuildInputs = [ ament-cmake-ros ament-python imu-gps-driver ublox rclpy];
-  nativeBuildInputs = [ ament-cmake-ros ament-cmake ament-python ];
+  propagatedBuildInputs = [ imu-gps-driver ublox launch-ros ];
+  nativeBuildInputs = [ rclpy ];
 
   meta = {
     description = "launch meta";
