@@ -7,6 +7,14 @@
   inputs = {
     nix-ros-overlay.url = "github:lopsided98/nix-ros-overlay/develop";
     nixpkgs.follows = "nix-ros-overlay/nixpkgs";  # IMPORTANT!!!
+    # ouster-ros-src.url = "github:ouster-lidar/ouster-ros/ros2?submodules=1";
+    # ouster-ros-src = {
+    # url = "git+https://github.com/ouster-lidar/ouster-ros.git?ref=refs/heads/ros2&?submodules=1";
+    # # branch = "ros2";
+    # flake = false;
+    # };
+    # ouster-ros-src.flake = false;
+    # ouster-ros-src.submodules = true;
   };
   outputs = { self, nix-ros-overlay, nixpkgs }:
     nix-ros-overlay.inputs.flake-utils.lib.eachDefaultSystem (system:
@@ -32,6 +40,7 @@
           ROS_AUTOMATIC_DISCOVERY_RANGE="LOCALHOST";
           RMW_CONNEXT_PUBLICATION_MODE="ASYNCHRONOUS";
           CYCLONEDDS_URI="file://config/ddsconfig.xml";
+          
           packages = [
             pkgs.colcon
             # ... other non-ROS packages
@@ -41,7 +50,18 @@
                     ros-base
                     foxglove-bridge
                     rosbag2-storage-mcap
-                    ouster-ros
+                    (ouster-ros.overrideAttrs (finalAttrs: previousAttrs: {
+                      buildType = "ament_cmake";
+                      buildInputs = with pkgs; [ ament-cmake eigen pcl rosidl-default-generators tf2-eigen ];
+                      checkInputs = [ gtest ];
+                      propagatedBuildInputs = with pkgs; [ tf2-eigen curl geometry-msgs jsoncpp launch launch-ros libtins ouster-sensor-msgs pcl-conversions pcl-ros rclcpp rclcpp-components rclcpp-lifecycle rosidl-default-runtime sensor-msgs spdlog std-msgs std-srvs tf2-ros ];
+                      nativeBuildInputs = [ ament-cmake rosidl-default-generators ];
+                      src = pkgs.fetchurl {
+                        url = "https://github.com/ros2-gbp/ouster-ros-release/archive/release/jazzy/ouster_ros/0.13.2.tar.gz";
+                        name = "0.13.2.tar.gz";
+                        sha256 = "sha256-TEO7xqCYxkDCcXejx0qV/sSL1VQccntUI5+q2KtjOJA=";
+                      };
+                    }))
                     rmw-cyclonedds-cpp
                     ublox
                     imu-gps-driver

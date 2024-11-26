@@ -19,16 +19,29 @@ def generate_launch_description():
     )
 
     # Define nodes to launch
-    ouster_driver = Node(
-        package='ouster_ros',
-        executable='sensor.launch.xml',
-        name='ouster_driver',
-        output='screen',
-        parameters=[{
-            'sensor_hostname': LaunchConfiguration('sensor_hostname'),
-            'viz': False,
-            'lidar_mode': LaunchConfiguration('lidar_mode'),
-        }]
+    # ouster_driver = Node(
+    #     package='ouster_ros',
+    #     executable='sensor.launch.xml',
+    #     name='ouster_driver',
+    #     output='screen',
+    #     parameters=[{
+    #         'sensor_hostname': LaunchConfiguration('sensor_hostname'),
+    #         'viz': False,
+    #         'lidar_mode': LaunchConfiguration('lidar_mode'),
+    #     }]
+    # )
+    ouster_driver_launch_path = os.path.join(
+        get_package_share_directory('ouster_ros'),
+        'launch',
+        'sensor.launch.xml'
+    )
+    ouster_driver = IncludeLaunchDescription(
+        XMLLaunchDescriptionSource(ouster_driver_launch_path),
+        launch_arguments={
+            "sensor_hostname":"169.254.87.155",
+            "viz":"false",
+            "lidar_mode":"512x20"
+        }.items()
     )
 
     usb_cam = Node(
@@ -37,7 +50,7 @@ def generate_launch_description():
         name='usb_cam',
         output='screen',
         parameters=[{
-            'video_device': '/dev/video2',
+            'video_device': '/dev/video0',
             'pixel_format': 'mjpeg2rgb',
             'frame_rate': 60,
         }]
@@ -54,8 +67,7 @@ def generate_launch_description():
     imu_driver = Node(
         package='imu_driver',
         executable='imu_node',
-        name='imu_driver',
-        output='screen'
+        name='imu_driver'
     )
 
     gps_driver = Node(
@@ -74,7 +86,7 @@ def generate_launch_description():
     return LaunchDescription([
         sensor_hostname_arg,
         lidar_mode_arg,
-        # ouster_driver,
+        ouster_driver,
         usb_cam,
         foxglove_bridge,
         imu_driver,

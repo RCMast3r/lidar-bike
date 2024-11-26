@@ -77,7 +77,7 @@
 
         systemd.services.init_network = {
           script = ''
-            /run/current-system/sw/bin/sysctl/sysctl -w net.core.rmem_max=2147483647
+          /run/current-system/sw/bin/sysctl -w net.core.rmem_max=2147483647
           '';
           wantedBy = [ "multi-user.target" ];
         };
@@ -114,7 +114,7 @@
 
         users.users.nixos.password = "nixos";
         users.groups.nixos = { };
-        users.users.nixos.extraGroups = [ "wheel" "dialout" "i2c" ];
+        users.users.nixos.extraGroups = [ "wheel" "dialout" "i2c" "video" ];
 
         users.users.nixos.isNormalUser = true;
         networking.firewall.enable = false;
@@ -122,15 +122,15 @@
         networking.interfaces.eth0.ipv4 = {
           addresses = [
             {
-              address = "192.168.1.4"; # Your static IP address
-              prefixLength = 24; # Netmask, 24 for 255.255.255.0
+              address = "169.254.3.5"; # Your static IP address
+              prefixLength = 16; # Netmask, 24 for 255.255.255.0
             }
           ];
           routes = [
             {
               address = "0.0.0.0";
               prefixLength = 0;
-              via = "192.168.1.1"; # Your gateway IP address
+              via = "169.254.3.1"; # Your gateway IP address
             }
           ];
         };

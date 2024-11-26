@@ -55,7 +55,7 @@ private:
         msg.linear_acceleration.z =  data.accel_data.z;
 
         imu_pub_->publish(msg);
-        RCLCPP_INFO(this->get_logger(), "Published IMU data");
+        // RCLCPP_INFO(this->get_logger(), "Published IMU data");
     }
 private:
     I2CDriver _driver;
