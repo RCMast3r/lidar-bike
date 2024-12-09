@@ -67,6 +67,8 @@
         };
         environment.systemPackages = [
           nix-ros-pkgs.colcon
+          pkgs.tmux
+
           pkgs.ser2net
             # ... other non-ROS packages
             
@@ -86,11 +88,14 @@
           description = "driver ros2 launch Service";
           wantedBy = [ "multi-user.target" ];
           after = [ "network.target" ];
-
+          environment = {
+            ROS_LOG_DIR = "/home/nixos/ros_log_dir";
+          };
           serviceConfig = {
-            path = [asdf];
+            path = [ asdf pkgs.bash pkgs.bashInteractive ];
             After = [ "network.target" ];
-            ExecStart = "/run/current-system/sw/bin/ros2 launch meta_launch multi_node_launch.py";
+            
+            ExecStart = "alias bash=\"/run/current-system/sw/bin/bash\" && /run/current-system/sw/bin/ros2 launch meta_launch multi_node_launch.py";
             ExecStop = "/bin/kill -9 $MAINPID";
             Restart = "on-failure";
           };
