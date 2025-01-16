@@ -48,6 +48,16 @@
                 ];
             });
       in {
+
+        fileSystems."/media/data" =
+        { device = "/dev/disk/by-uuid/f87fa14e-0519-4377-9988-4a037fcd967f";
+          fsType = "ext4";
+        };
+        systemd.tmpfiles.rules = [
+          "d /media/data 0755 nixos nixos -"
+        ];
+        
+
         nix.settings.experimental-features = [ "nix-command" "flakes" ];
         nix.settings.require-sigs = false;
         security.sudo.enable = true;
