@@ -1,8 +1,8 @@
 {
   description = "raspberry-pi-nix example";
   nixConfig = {
-    extra-substituters = [ "https://ros.cachix.org" ];
-    extra-trusted-public-keys = [ "ros.cachix.org-1:dSyZxI8geDCJrwgvCOHDoAfOm5sV1wCPjBkKL+38Rvo=" ];
+    extra-substituters = [ "https://ros.cachix.org" "https://raspberry-pi-nix.cachix.org" "https://nix-community.cachix.org"];
+    extra-trusted-public-keys = [ "ros.cachix.org-1:dSyZxI8geDCJrwgvCOHDoAfOm5sV1wCPjBkKL+38Rvo=" "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs=" "raspberry-pi-nix.cachix.org-1:WmV2rdSangxW0rZjY/tBvBDSaNFQ3DyEQsVw8EvHn9o="];
   };
 
   # nixConfig = {
@@ -23,32 +23,56 @@
     raspberry-pi-nix.url = "github:nix-community/raspberry-pi-nix";
     nixpkgs.url = "github:NixOS/nixpkgs";
     nixpkgs.follows = "raspberry-pi-nix/nixpkgs";
+    lb-ros-components.url = "github:RCMast3r/lb_ros_components";
+    lb-ros-components.inputs.nixpkgs.follows = "nix-ros-nixpkgs";
+    lb-ros-components.inputs.nix-ros-overlay.follows = "nix-ros-overlay";
+    ros2-v4l2-camera-src.url = "gitlab:rcmast3r1/ros2_v4l2_camera/compressed_formats";
+    ros2-v4l2-camera-src.flake = false;
   };
 
-  outputs = { self, nixpkgs, raspberry-pi-nix, nix-ros-overlay, nix-ros-nixpkgs }:
+  outputs = { self, nixpkgs, raspberry-pi-nix, nix-ros-overlay, nix-ros-nixpkgs, lb-ros-components,ros2-v4l2-camera-src }:
     let
+      nixpkg_overlays =
+        {
+          nixpkgs.overlays =
+            [
+              (self: super: {
+                linux-router = super.linux-router.override {
+                  useQrencode = false;
+                };
+              })
+            ];
+        };
+        linux-network-module = ./linux-network.nix;
+
       basic-config = { pkgs, lib, nix-ros-pkgs, ... }: let
         asdf = (with nix-ros-pkgs.rosPackages.jazzy; buildEnv {
                 paths = [
+                    v4l2-camera
+                    
                     ros-core
                     ros-base
                     foxglove-bridge
                     rosbag2-storage-mcap
-                    ouster-ros
+                    # ouster-ros
                     rmw-cyclonedds-cpp
                     ublox
                     imu-gps-driver
                     ublox-dgnss
                     nmea-navsat-driver
                     meta-launch
-                    (usb-cam.overrideAttrs (finalAttrs: previousAttrs: {
-                      propagatedBuildInputs = with nix-ros-pkgs; [ builtin-interfaces camera-info-manager cv-bridge ffmpeg_4 image-transport image-transport-plugins rclcpp rclcpp-components rosidl-default-runtime sensor-msgs std-msgs std-srvs v4l-utils ];
-                      nativeBuildInputs = previousAttrs.nativeBuildInputs ++ [ nix-ros-pkgs.pkg-config ];
-                    }))
+                    # (usb-cam.overrideAttrs (finalAttrs: previousAttrs: {
+                    #   propagatedBuildInputs = with nix-ros-pkgs; [ builtin-interfaces camera-info-manager cv-bridge ffmpeg_4 image-transport image-transport-plugins rclcpp rclcpp-components rosidl-default-runtime sensor-msgs std-msgs std-srvs v4l-utils ];
+                    #   nativeBuildInputs = previousAttrs.nativeBuildInputs ++ [ nix-ros-pkgs.pkg-config ];
+                    # }))
+                    lidar-bike-components
                 ];
             });
       in {
-
+        fileSystems."/" = {
+          device = "/dev/disk/by-label/nixos";
+          fsType = "ext4";
+        };
         fileSystems."/media/data" =
         { device = "/dev/disk/by-uuid/f87fa14e-0519-4377-9988-4a037fcd967f";
           fsType = "ext4";
@@ -56,7 +80,6 @@
         systemd.tmpfiles.rules = [
           "d /media/data 0755 nixos nixos -"
         ];
-        
 
         nix.settings.experimental-features = [ "nix-command" "flakes" ];
         nix.settings.require-sigs = false;
@@ -194,11 +217,30 @@
       };
       nix-ros-pkgs = import nix-ros-nixpkgs {
         system = "aarch64-linux";
-        overlays = [ nix-ros-overlay.overlays.default my-ros-overlay ];
+        overlays = [ nix-ros-overlay.overlays.default my-ros-overlay lb-ros-components.overlays.aarch64-linux ];
       };
+      
+      jazzy_ros_packages = with nix-ros-pkgs.rosPackages.jazzy; [ ament-cmake geometry-msgs launch launch-ros ouster-sensor-msgs pcl-conversions pcl-ros rclcpp rclcpp-components rclcpp-lifecycle rosidl-default-runtime sensor-msgs std-msgs std-srvs tf2-ros tf2-eigen ];
       my_overlay = final: prev: {
         imu-gps-driver = final.callPackage ./imu_gps_driver.nix { };
         meta-launch = final.callPackage ./driver_launch_meta.nix { };
+        v4l2-camera = prev.v4l2-camera.overrideAttrs (prev: {
+          src = ros2-v4l2-camera-src;
+          propagatedBuildInputs = prev.propagatedBuildInputs ++ [ nix-ros-pkgs.rosPackages.jazzy.cv-bridge ];
+          # buildInputs = prev.buildInputs ++ [ pkgs.rosPackages.jazzy.cv-bridge ];
+        });
+        ouster-ros = prev.ouster-ros.overrideAttrs (finalAttrs: previousAttrs: {
+            buildType = "ament_cmake";
+            buildInputs = with nix-ros-pkgs; [ libtins spdlog rosPackages.jazzy.ament-cmake eigen pcl rosPackages.jazzy.rosidl-default-generators rosPackages.jazzy.tf2-eigen ] ++ jazzy_ros_packages;
+            checkInputs = [ nix-ros-pkgs.gtest ];
+            propagatedBuildInputs = with nix-ros-pkgs; [ curl jsoncpp ] ++ jazzy_ros_packages;
+            nativeBuildInputs = with nix-ros-pkgs.rosPackages.jazzy; [ ament-cmake rosidl-default-generators ];
+            src = nix-ros-pkgs.fetchurl {
+              url = "https://github.com/ros2-gbp/ouster-ros-release/archive/release/jazzy/ouster_ros/0.13.2.tar.gz";
+              name = "0.13.2.tar.gz";
+              sha256 = "sha256-TEO7xqCYxkDCcXejx0qV/sSL1VQccntUI5+q2KtjOJA=";
+            };
+          });
       };
 
       my-ros-overlay = final: prev: {
@@ -232,10 +274,10 @@
                     ublox-dgnss
                     nmea-navsat-driver
                     meta-launch
-                    (usb-cam.overrideAttrs (finalAttrs: previousAttrs: {
-                      propagatedBuildInputs = with test-nix-ros-pkgs; [ builtin-interfaces camera-info-manager cv-bridge ffmpeg_4 image-transport image-transport-plugins rclcpp rclcpp-components rosidl-default-runtime sensor-msgs std-msgs std-srvs v4l-utils ];
-                      nativeBuildInputs = previousAttrs.nativeBuildInputs ++ [ test-nix-ros-pkgs.pkg-config ];
-                    }))
+                    # (usb-cam.overrideAttrs (finalAttrs: previousAttrs: {
+                    #   propagatedBuildInputs = with test-nix-ros-pkgs; [ builtin-interfaces camera-info-manager cv-bridge ffmpeg_4 image-transport image-transport-plugins rclcpp rclcpp-components rosidl-default-runtime sensor-msgs std-msgs std-srvs v4l-utils ];
+                    #   nativeBuildInputs = previousAttrs.nativeBuildInputs ++ [ test-nix-ros-pkgs.pkg-config ];
+                    # }))
                 ];
             })
           ];
@@ -247,6 +289,8 @@
         system = "aarch64-linux";
 
         modules = [
+          # (nixpkg_overlays)
+          linux-network-module
           raspberry-pi-nix.nixosModules.raspberry-pi
           basic-config
           {
