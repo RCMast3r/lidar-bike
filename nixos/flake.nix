@@ -1,20 +1,9 @@
 {
   description = "raspberry-pi-nix example";
   nixConfig = {
-    extra-substituters = [ "https://ros.cachix.org" "https://raspberry-pi-nix.cachix.org" "https://nix-community.cachix.org"];
-    extra-trusted-public-keys = [ "ros.cachix.org-1:dSyZxI8geDCJrwgvCOHDoAfOm5sV1wCPjBkKL+38Rvo=" "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs=" "raspberry-pi-nix.cachix.org-1:WmV2rdSangxW0rZjY/tBvBDSaNFQ3DyEQsVw8EvHn9o="];
+    extra-substituters = [ "https://ros.cachix.org" "https://raspberry-pi-nix.cachix.org" "https://nix-community.cachix.org" "https://rcmast3r.cachix.org"];
+    extra-trusted-public-keys = [ "ros.cachix.org-1:dSyZxI8geDCJrwgvCOHDoAfOm5sV1wCPjBkKL+38Rvo=" "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs=" "raspberry-pi-nix.cachix.org-1:WmV2rdSangxW0rZjY/tBvBDSaNFQ3DyEQsVw8EvHn9o=" "rcmast3r.cachix.org-1:dH22dF877RZ1j7uvAgqnQWNChxdQDeqgBRWpXzoi84c="];
   };
-
-  # nixConfig = {
-  #   extra-substituters = [
-  #     # "https://raspberry-pi-nix.cachix.org"
-  #     # "https://nix-community.cachix.org"
-  #   ];
-  #   extra-trusted-public-keys = [
-  #     # "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
-  #     # "raspberry-pi-nix.cachix.org-1:WmV2rdSangxW0rZjY/tBvBDSaNFQ3DyEQsVw8EvHn9o="
-  #   ];
-  # };
 
   inputs = {
     nix-ros-overlay.url = "github:lopsided98/nix-ros-overlay/develop";
@@ -69,10 +58,10 @@
                 ];
             });
       in {
-        fileSystems."/" = {
-          device = "/dev/disk/by-label/nixos";
-          fsType = "ext4";
-        };
+        # fileSystems."/" = {
+        #   device = "/dev/disk/by-label/nixos";
+        #   fsType = "ext4";
+        # };
         fileSystems."/media/data" =
         { device = "/dev/disk/by-uuid/f87fa14e-0519-4377-9988-4a037fcd967f";
           fsType = "ext4";
@@ -292,6 +281,7 @@
           # (nixpkg_overlays)
           linux-network-module
           raspberry-pi-nix.nixosModules.raspberry-pi
+          raspberry-pi-nix.nixosModules.sd-image
           basic-config
           {
             _module.args = { inherit nix-ros-pkgs; };
