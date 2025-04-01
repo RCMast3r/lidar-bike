@@ -264,11 +264,11 @@
         "ros2-v4l2-camera-src": "ros2-v4l2-camera-src"
       },
       "locked": {
-        "lastModified": 1741362287,
-        "narHash": "sha256-KSK439MGLlvs3fR1FbmT+bC5e+xs10QfyhNVQyShoj0=",
+        "lastModified": 1743543940,
+        "narHash": "sha256-++f9QoKFeI3E0wrEb4JXGR7RVSiDj20T+2IdAbeGIlA=",
         "owner": "RCMast3r",
         "repo": "lb_ros_components",
-        "rev": "6009f40146ac594c773853d6dd913853e26a5e8c",
+        "rev": "db06f468da84e6f0cb47bad4160c3457c154c0ad",
         "type": "github"
       },
       "original": {
