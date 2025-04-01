@@ -13,17 +13,19 @@
     # ... other non-ROS packages
     (with nix-ros-pkgs.rosPackages.jazzy; buildEnv {
       paths = [
+        nix-ros-pkgs.python312Packages.tkinter
         ros-core
         ros-base
         foxglove-bridge
         rosbag2-storage-mcap
-        ouster-ros
+        # ouster-ros
         rmw-cyclonedds-cpp
         ublox
         imu-gps-driver
         ublox-dgnss
         nmea-navsat-driver
         meta-launch
+        lidar-camera-tf-pub
       ];
     })
   ];

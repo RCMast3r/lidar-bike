@@ -10,7 +10,9 @@ import threading
 class LiDARCameraCalibrationNode(Node):
     def __init__(self):
         super().__init__('lidar_camera_calibration')
-
+        self.gui_thread = threading.Thread(target=self.create_gui, daemon=True)
+        self.gui_thread.start()
+        
         # Publisher for the transformation
         self.publisher_ = self.create_publisher(TransformStamped, 'lidar_camera_transform', 10)
         
@@ -28,9 +30,9 @@ class LiDARCameraCalibrationNode(Node):
         self.rotation = [0.0, 0.0, 0.0]     # roll, pitch, yaw
 
         # Start Tkinter GUI in a separate thread
-        self.gui_thread = threading.Thread(target=self.create_gui, daemon=True)
-        self.gui_thread.start()
-
+        # self.init_gui()
+        
+    
     def create_gui(self):
         # Create a Tkinter root window
         self.root = tk.Tk()
@@ -61,9 +63,10 @@ class LiDARCameraCalibrationNode(Node):
 
     def get_slider_values(self):
         # Update translation and rotation from sliders
-        self.translation[0] = self.sliders["Tx"].get()
-        self.translation[1] = self.sliders["Ty"].get()
-        self.translation[2] = self.sliders["Tz"].get()
+        if(self.sliders):
+            self.translation[0] = self.sliders["Tx"].get()
+            self.translation[1] = self.sliders["Ty"].get()
+            self.translation[2] = self.sliders["Tz"].get()
         self.rotation[0] = np.radians(self.sliders["Roll"].get())
         self.rotation[1] = np.radians(self.sliders["Pitch"].get())
         self.rotation[2] = np.radians(self.sliders["Yaw"].get())
@@ -83,8 +86,8 @@ class LiDARCameraCalibrationNode(Node):
         # Create a TransformStamped message
         transform = TransformStamped()
         transform.header.stamp = self.get_clock().now().to_msg()
-        transform.header.frame_id = 'os_sensor'
-        transform.child_frame_id = 'default_cam'
+        transform.header.frame_id = 'os_lidar'
+        transform.child_frame_id = 'camera'
 
         # Translation
         transform.transform.translation.x = self.translation[0]
@@ -110,24 +113,26 @@ class LiDARCameraCalibrationNode(Node):
         # Create a dummy CameraInfo message
         camera_info = CameraInfo()
         camera_info.header.stamp = self.get_clock().now().to_msg()
-        camera_info.header.frame_id = 'default_cam'
+        camera_info.header.frame_id = 'camera'
         
         # Dummy intrinsic parameters
-        camera_info.height = 480
-        camera_info.width = 640
+        camera_info.height = 1920
+        camera_info.width = 1080
         camera_info.distortion_model = 'plumb_bob'
         camera_info.d = [0.0, 0.0, 0.0, 0.0, 0.0]  # Zero distortion
         # camera_info.k = [1.0, 0.0, 320.0, 0.0, 1.0, 240.0, 0.0, 0.0, 1.0]
         camera_info.k = [
-            500.0, 0.0, 320.0,  # fx,  0, cx
-            0.0, 500.0, 240.0,  #  0, fy, cy
+            1.16315864e+03, 0.0, 2.80054226e+02,  # fx,  0, cx
+            0.0, 1.13928846e+03, 1.86520649e+02,  #  0, fy, cy
             0.0, 0.0, 1.0        #  0,  0,  1
         ]
+
+        
         camera_info.r = [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]
         # camera_info.p = [1.0, 0.0, 320.0, 0.0, 0.0, 1.0, 240.0, 0.0, 0.0, 0.0, 1.0, 0.0]
         camera_info.p = [
-            500.0, 0.0, 320.0, 0.0,  # fx,  0, cx, Tx
-            0.0, 500.0, 240.0, 0.0,  #  0, fy, cy, Ty
+            1.16315864e+03, 0.0, 2.80054226e+02, 0.0,  # fx,  0, cx, Tx
+            0.0, 1.13928846e+03, 1.86520649e+02, 0.0,  #  0, fy, cy, Ty
             0.0, 0.0, 1.0, 0.0        #  0,  0,  1,  0
         ]
 

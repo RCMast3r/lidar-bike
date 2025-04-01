@@ -47,6 +47,7 @@
       my_overlay = final: prev: {
         imu-gps-driver = final.callPackage ./pkgs/imu_gps_driver.nix { };
         meta-launch = final.callPackage ./pkgs/driver_launch_meta.nix { };
+        lidar-camera-tf-pub = final.callPackage ./pkgs/lidar_camera_tf_pub.nix { };
         v4l2-camera = prev.v4l2-camera.overrideAttrs (prev: {
           src = ros2-v4l2-camera-src;
           propagatedBuildInputs = prev.propagatedBuildInputs ++ [ nix-ros-pkgs.rosPackages.jazzy.cv-bridge ];
@@ -83,7 +84,7 @@
           linux-network-module
           raspberry-pi-nix.nixosModules.raspberry-pi
           raspberry-pi-nix.nixosModules.sd-image
-          basic-config
+          # basic-config
           {
             _module.args = { inherit nix-ros-pkgs; };
           }
