@@ -68,6 +68,12 @@ nix tools being used:
 - `ros2 run nmea_navsat_driver nmea_serial_driver --ros-args -p port:=/dev/ttyUSB0 -p baud:=9600`
     - launches the gps driver
 
+## ROS nodes / components
+
+- [lidar-bike ROS components](https://github.com/RCMast3r/lb_ros_components)
+    - ROS components are used in this project to enable better handling of memory between nodes as it became a bottleneck for recording.
+    - [about ROS components](https://docs.ros.org/en/jazzy/index.html)
+    - the main launch file for the components that puts these together is in the [lb_ros_components](https://github.com/RCMast3r/lb_ros_components) code repo (as of right now)
 
 ## errata and details
 
