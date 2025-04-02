@@ -1,12 +1,12 @@
-{ buildRosPackage, ament-cmake-ros, ament-cmake, geometry-msgs, sensor-msgs, rclpy, launch-ros, python311Packages }:
+{ buildRosPackage, ament-cmake-ros, ament-cmake, geometry-msgs, sensor-msgs, rclpy, launch-ros, python312Packages }:
 buildRosPackage {
   pname = "ros-jazzy-lidar-camera-tf-pub";
   version = "0.0.1a";
   src = ./lidar_camera_tf_pub;
 
   buildType = "ament_python";
-  buildInputs = [ geometry-msgs sensor-msgs python311Packages.opencv4 python311Packages.tkinter ];
-  propagatedBuildInputs = [ ];
+  buildInputs = [ geometry-msgs sensor-msgs python312Packages.opencv4 python312Packages.tkinter ];
+  propagatedBuildInputs = [  python312Packages.opencv4 python312Packages.tkinter ];
   nativeBuildInputs = [ rclpy ];
 
   meta = {
